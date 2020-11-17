@@ -100,7 +100,7 @@ func main() {
 			return
 		}
 
-		if err := lib.ParseAndStore(r.Context, db, buf); err != nil {
+		if err := lib.ParseAndStore(r.Context(), db, buf); err != nil {
 			log.WithError(err).Error("could not parse request")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
