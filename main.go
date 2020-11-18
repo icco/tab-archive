@@ -85,9 +85,6 @@ func main() {
 	})
 
 	r.Post("/hook", func(w http.ResponseWriter, r *http.Request) {
-		ct := r.Header.Get("content-type")
-		log.WithField("content-type", ct).Debug("got content-type")
-
 		buf, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			log.WithError(err).Error("could not read buffer")
@@ -95,6 +92,7 @@ func main() {
 			return
 		}
 
+		ct := r.Header.Get("content-type")
 		if ct != "application/json" {
 			http.Error(w, "expected 'application/json' content type", http.StatusBadRequest)
 			return
