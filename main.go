@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -77,7 +78,10 @@ func main() {
 	r.Use(crs.Handler)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hi."))
+		tmpl := template.Must(template.ParseFiles("index.tmpl"))
+		if err := tmpl.Execute(w, nil); err != nil {
+			log.Fatalf("template execution: %s", err)
+		}
 	})
 
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
