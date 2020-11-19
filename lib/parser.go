@@ -41,7 +41,7 @@ WHERE posts.id = $1;
 		t.Favicon,
 		nil,
 		time.Now()); err != nil {
-		return err
+		return fmt.Errorf("writing db entry: %w", err)
 	}
 
 	return nil
