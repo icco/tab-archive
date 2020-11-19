@@ -44,12 +44,5 @@ WHERE posts.id = $1;
 		return err
 	}
 
-	_, err = strconv.ParseInt(p.ID, 10, 64)
-	if err != nil {
-		return err
-	}
-
-	return nil
-
 	return nil
 }
