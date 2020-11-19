@@ -33,7 +33,7 @@ INSERT INTO tabs(title, url, seen, favicon, user_id)
 VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (url, user_id) DO UPDATE
 SET (title, url, seen, favicon, user_id, modified_at) = ($1, $2, $3, $4, $5, $6)
-WHERE posts.id = $1;
+WHERE tabs.url = $2 AND tabs.user_id = $5;
 `,
 		t.Title,
 		t.URL,
