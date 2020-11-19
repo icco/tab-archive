@@ -20,11 +20,11 @@ var (
 			Description: "Creating table users",
 			Script: `
       CREATE TABLE users (
-        id serial primary key,
-				name text,
-				google_id text,
-				created_at timestamp with time zone,
-        modified_at timestamp with time zone
+        id          SERIAL PRIMARY KEY,
+				name        TEXT,
+				google_id   TEXT,
+				created_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        modified_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
       `,
 		},
@@ -33,14 +33,14 @@ var (
 			Description: "Creating table tabs",
 			Script: `
       CREATE TABLE tabs (
-        id serial primary key,
-				user_id integer REFERENCES users (id),
-        url text,
-        favicon text,
-        title text,
-        seen timestamp with time zone,
-				created_at timestamp with time zone,
-        modified_at timestamp with time zone
+        id          SERIAL PRIMARY KEY,
+				user_id     INTEGER REFERENCES users (id),
+        url         TEXT,
+        favicon     TEXT,
+        title       TEXT,
+        seen        TIMESTAMP WITH TIME ZONE,
+				created_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        modified_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
       `,
 		},

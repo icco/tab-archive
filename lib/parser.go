@@ -22,6 +22,34 @@ func ParseAndStore(ctx context.Context, db *sql.DB, buf []byte) error {
 		return fmt.Errorf("could not parse: %w", err)
 	}
 
-	log.WithField("tab", t).Info("parsed")
+	log.WithField("tab", t).Debug("parsed")
+
+	// TODO: Get user, insert if new
+
+	if _, err := db.ExecContext(
+		ctx,
+		`
+INSERT INTO tabs(title, url, seen, favicon, user_id)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (url, user_id) DO UPDATE
+SET (title, url, seen, favicon, user_id, modified_at) = ($1, $2, $3, $4, $5, $6)
+WHERE posts.id = $1;
+`,
+		t.Title,
+		t.URL,
+		t.Seen,
+		t.Favicon,
+		nil,
+		time.Now()); err != nil {
+		return err
+	}
+
+	_, err = strconv.ParseInt(p.ID, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 	return nil
 }

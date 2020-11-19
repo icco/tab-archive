@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -54,7 +54,7 @@ func main() {
 		})
 	}
 
-	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	db, err := lib.InitDB(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatalf("cannot connect to database server: %+v", err)
 	}
