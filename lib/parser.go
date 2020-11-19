@@ -28,19 +28,12 @@ func ParseAndStore(ctx context.Context, db *sql.DB, buf []byte) error {
 
 	if _, err := db.ExecContext(
 		ctx,
-		`
-INSERT INTO tabs(title, url, seen, favicon, user_id)
-VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (url, user_id) DO UPDATE
-SET (title, url, seen, favicon, user_id, modified_at) = ($1, $2, $3, $4, $5, $6)
-WHERE tabs.url = $2 AND tabs.user_id = $5;
-`,
+		`INSERT INTO tabs (title, url, seen, favicon, user_id) VALUES ($1, $2, $3, $4, $5)`,
 		t.Title,
 		t.URL,
 		t.Seen,
 		t.Favicon,
-		nil,
-		time.Now()); err != nil {
+		nil); err != nil {
 		return fmt.Errorf("writing db entry: %w", err)
 	}
 
