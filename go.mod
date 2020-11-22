@@ -16,4 +16,6 @@ require (
 	github.com/opencensus-integrations/ocsql v0.1.6
 	github.com/sirupsen/logrus v1.7.0
 	go.opencensus.io v0.22.5
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	google.golang.org/api v0.10.0
 )

@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
@@ -89,6 +91,21 @@ func main() {
 	})
 
 	r.Post("/hook", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		tok := r.Header.Get("Authorization")
+		if tok == "" {
+			err := fmt.Errorf("no Authorization header")
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		tok = strings.TrimPrefix(tok, "Bearer ")
+		u, err := lib.GetUser(ctx, db, tok)
+		if err != nil {
+			log.WithError(err).Error("could not get user")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		buf, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			log.WithError(err).Error("could not read buffer")
@@ -102,7 +119,7 @@ func main() {
 			return
 		}
 
-		if err := lib.ParseAndStore(r.Context(), db, buf); err != nil {
+		if err := lib.ParseAndStore(ctx, db, u, buf); err != nil {
 			log.WithError(err).Error("could not parse request")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
