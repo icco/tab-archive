@@ -42,7 +42,7 @@ func main() {
 			ProjectID:               "icco-cloud",
 			MonitoredResource:       monitoredresource.Autodetect(),
 			DefaultMonitoringLabels: labels,
-			DefaultTraceAttributes:  map[string]interface{}{"app": "relay"},
+			DefaultTraceAttributes:  map[string]interface{}{"app": "tab-archive"},
 		})
 
 		if err != nil {
