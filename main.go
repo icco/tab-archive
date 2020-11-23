@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -126,6 +127,41 @@ func main() {
 		}
 
 		w.Write([]byte(`{"status": "success"}`))
+	})
+
+	r.Get("/archive", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		j := json.NewEncoder(w)
+
+		tok := r.Header.Get("Authorization")
+		if tok == "" {
+			err := fmt.Errorf("no Authorization header")
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		tok = strings.TrimPrefix(tok, "Bearer ")
+		u, err := lib.GetUser(ctx, db, tok)
+		if err != nil {
+			log.WithError(err).Error("could not get user")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		tabs, err := u.GetArchive(ctx, db)
+		if err != nil {
+			log.WithError(err).Error("could not get user tabs")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if err := j.Encode(map[string]interface{}{
+			"status": "success",
+			"tabs":   tabs,
+		}); err != nil {
+			log.WithError(err).Error("could not marshal data")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	})
 
 	h := &ochttp.Handler{

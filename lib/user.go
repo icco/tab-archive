@@ -62,3 +62,34 @@ func loadUser(ctx context.Context, db *sql.DB, id int64) (*User, error) {
 
 	return u, nil
 }
+
+func (u *User) GetArchive(ctx context.Context, db *sql.DB) ([]*Tab, error) {
+	limit := 1000
+	offset := 0
+
+	rows, err := db.QueryContext(ctx, `
+  SELECT title, url, favicon, seen
+  FROM tabs
+	WHERE user_id = $3
+  ORDER BY seen DESC
+  LIMIT $1 OFFSET $2`,
+		limit,
+		offset,
+		u.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tabs []*Tab
+	for rows.Next() {
+		t := new(Tab)
+		if err := rows.Scan(&t.Title, &t.URL, &t.Favicon, &t.Seen); err != nil {
+			return nil, err
+		}
+
+		tabs = append(tabs, t)
+	}
+
+	return tabs, nil
+}
