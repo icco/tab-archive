@@ -7,13 +7,13 @@ require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.4
 	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
 	github.com/GuiaBolso/darwin v0.0.0-20191218124601-fd6d2aa3d244
-	github.com/aws/aws-sdk-go v1.35.33 // indirect
+	github.com/aws/aws-sdk-go v1.35.35 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
 	github.com/cznic/ql v1.2.0 // indirect
 	github.com/felixge/httpsnoop v1.0.1
 	github.com/go-chi/chi v1.5.0
 	github.com/go-chi/cors v1.1.1
-	github.com/google/go-cmp v0.5.3 // indirect
+	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/hellofresh/logging-go v0.4.0
 	github.com/icco/logrus-stackdriver-formatter v0.3.0
 	github.com/lib/pq v1.8.0
