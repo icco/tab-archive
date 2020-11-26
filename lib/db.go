@@ -44,6 +44,11 @@ var (
       );
       `,
 		},
+		{
+			Version:     3,
+			Description: "add unique restraint",
+			Script:      `ALTER TABLE tabs ALTER COLUMN google_id SET UNIQUE NOT NULL`,
+		},
 	}
 )
 
