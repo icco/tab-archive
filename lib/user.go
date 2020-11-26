@@ -29,13 +29,14 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not get oauth2 token info: %w", err)
 	}
+  log.WithField("token_info", ti).Debug("user found")
 
 	if ti.ExpiresIn <= 0 {
-		return nil, fmt.Errorf("Token is expired.")
+		return nil, fmt.Errorf("token is expired")
 	}
 
 	if !ti.VerifiedEmail {
-		return nil, fmt.Errorf("Email not verified.")
+		return nil, fmt.Errorf("email not verified")
 	}
 
 	var id int64
