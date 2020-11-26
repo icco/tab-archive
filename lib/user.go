@@ -65,8 +65,8 @@ func loadUser(ctx context.Context, db *sql.DB, id int64) (*User, error) {
 	u.ID = id
 	err := db.QueryRowContext(
 		ctx,
-		`SELECT name, google_id, created_at, modified_at FROM users WHERE id = $1`,
-		id).Scan(&u.Name, &u.GoogleID, &u.CreatedAt, &u.ModifiedAt)
+		`SELECT google_id, created_at, modified_at FROM users WHERE id = $1`,
+		id).Scan(&u.GoogleID, &u.CreatedAt, &u.ModifiedAt)
 	switch {
 	case err == sql.ErrNoRows:
 		return nil, fmt.Errorf("no user with id %d", id)
