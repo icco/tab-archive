@@ -61,6 +61,7 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 	log.WithFields(logrus.Fields{
 		"token_info": ti,
 		"user":       u,
+		"user_info":  ui,
 	}).Debug("user found")
 
 	return u, nil
