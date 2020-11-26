@@ -52,7 +52,7 @@ var (
 		{
 			Version:     4,
 			Description: "add unique restraint",
-			Script:      `ALTER TABLE tabs ADD UNIQUE (google_id)`
+			Script:      `ALTER TABLE tabs ADD UNIQUE (google_id)`,
 		},
 	}
 )
