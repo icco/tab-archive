@@ -61,7 +61,7 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 }
 
 func loadUser(ctx context.Context, db *sql.DB, id int64) (*User, error) {
-	var u *User
+	u := &User{}
 	err := db.QueryRow(
 		"SELECT name, google_id, created_at, modified_at FROM users WHERE id = ?",
 		id).Scan(&u.Name, &u.GoogleID, &u.CreatedAt, &u.ModifiedAt)
