@@ -11,10 +11,10 @@ import (
 )
 
 type Tab struct {
-	URL     string
-	Title   string
-	Favicon string
-	Seen    time.Time
+	URL     string    `json:"url"`
+	Title   string    `json:"title"`
+	Favicon string    `json:"favicon"`
+	Seen    time.Time `json:"seen"`
 }
 
 func ParseAndStore(ctx context.Context, db *sql.DB, u *User, buf []byte) error {
