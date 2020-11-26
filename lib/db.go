@@ -47,12 +47,12 @@ var (
 		{
 			Version:     3,
 			Description: "add not null restraint",
-			Script:      `ALTER TABLE tabs ALTER COLUMN google_id SET NOT NULL`,
+			Script:      `ALTER TABLE users ALTER COLUMN google_id SET NOT NULL`,
 		},
 		{
 			Version:     4,
 			Description: "add unique restraint",
-			Script:      `ALTER TABLE tabs ADD UNIQUE (google_id)`,
+			Script:      `ALTER TABLE users ADD UNIQUE (google_id)`,
 		},
 	}
 )
