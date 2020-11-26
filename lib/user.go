@@ -62,10 +62,15 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 
 func loadUser(ctx context.Context, db *sql.DB, id int64) (*User, error) {
 	u := &User{}
-	err := db.QueryRow(
-		"SELECT name, google_id, created_at, modified_at FROM users WHERE id = ?",
+	u.ID = id
+	err := db.QueryRowContext(
+		ctx,
+		`SELECT name, google_id, created_at, modified_at FROM users WHERE id=?`,
 		id).Scan(&u.Name, &u.GoogleID, &u.CreatedAt, &u.ModifiedAt)
-	if err != nil {
+	switch {
+	case err == sql.ErrNoRows:
+		return nil, fmt.Errorf("no user with id %d", id)
+	case err != nil:
 		return nil, fmt.Errorf("could not get user %d: %w", id, err)
 	}
 
