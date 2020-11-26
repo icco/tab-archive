@@ -8,7 +8,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
-	oauth2_api "google.golang.org/api/oauth2/v2"
+	oAPI "google.golang.org/api/oauth2/v2"
 )
 
 type User struct {
@@ -21,7 +21,7 @@ type User struct {
 
 func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 	f := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: authToken})
-	c, err := oauth2_api.New(oauth2.NewClient(ctx, f))
+	c, err := oAPI.New(oauth2.NewClient(ctx, f))
 	if err != nil {
 		return nil, fmt.Errorf("could not make oauth2 api client: %w", err)
 	}
@@ -35,17 +35,23 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 		return nil, fmt.Errorf("token is expired")
 	}
 
+	ui, err := oAPI.NewUserinfoService(c).Get().Context(ctx).Do()
+	if err != nil {
+		return nil, fmt.Errorf("could not get user info: %w", err)
+	}
+
 	var id int64
 	if err := db.QueryRowContext(
 		ctx,
-		`INSERT INTO users (google_id)
-    VALUES($1)
+		`INSERT INTO users (google_id, name)
+    VALUES($1, $3)
     ON CONFLICT (google_id) DO UPDATE
-    SET modified_at = $2
+    SET (name, modified_at) = ($3, $2)
     WHERE users.google_id = $1
     RETURNING id`,
 		ti.UserId,
-		time.Now()).Scan(&id); err != nil {
+		time.Now(),
+		ui.Name).Scan(&id); err != nil {
 		return nil, fmt.Errorf("writing db entry: %w", err)
 	}
 	u, err := loadUser(ctx, db, id)
