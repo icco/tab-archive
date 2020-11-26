@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	oauth2_api "google.golang.org/api/oauth2/v2"
 )
@@ -29,14 +30,9 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not get oauth2 token info: %w", err)
 	}
-	log.WithField("token_info", ti).Debug("user found")
 
 	if ti.ExpiresIn <= 0 {
 		return nil, fmt.Errorf("token is expired")
-	}
-
-	if !ti.VerifiedEmail {
-		return nil, fmt.Errorf("email not verified")
 	}
 
 	var id int64
@@ -48,8 +44,16 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 		nil).Scan(&id); err != nil {
 		return nil, fmt.Errorf("writing db entry: %w", err)
 	}
+	u, err := loadUser(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	log.WithFields(logrus.Fields{
+		"token_info": ti,
+		"user":       u,
+	}).Debug("user found")
 
-	return loadUser(ctx, db, id)
+	return u, nil
 }
 
 func loadUser(ctx context.Context, db *sql.DB, id int64) (*User, error) {
