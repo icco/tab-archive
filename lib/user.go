@@ -45,8 +45,7 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
     WHERE users.google_id = $1
     RETURNING id`,
 		ti.UserId,
-		time.Now(),
-		nil).Scan(&id); err != nil {
+		time.Now()).Scan(&id); err != nil {
 		return nil, fmt.Errorf("writing db entry: %w", err)
 	}
 	u, err := loadUser(ctx, db, id)
