@@ -38,7 +38,12 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 	var id int64
 	if err := db.QueryRowContext(
 		ctx,
-		`INSERT INTO users (google_id) VALUES($1) ON CONFLICT ON (google_id) DO UPDATE SET modified_at = $2 RETURNING id`,
+		`INSERT INTO users (google_id)
+    VALUES($1)
+    ON CONFLICT (google_id) DO UPDATE
+    SET modified_at = $2
+    WHERE users.google_id = $1
+    RETURNING id`,
 		ti.UserId,
 		time.Now(),
 		nil).Scan(&id); err != nil {
