@@ -54,6 +54,11 @@ var (
 			Description: "add unique restraint",
 			Script:      `ALTER TABLE users ADD UNIQUE (google_id)`,
 		},
+		{
+			Version:     5,
+			Description: "store emails",
+			Script:      `ALTER TABLE users ADD COLUMN email text`,
+		},
 	}
 )
 

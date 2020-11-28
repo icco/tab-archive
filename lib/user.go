@@ -14,6 +14,7 @@ import (
 type User struct {
 	ID         int64
 	Name       string
+	Email      string
 	GoogleID   string
 	CreatedAt  time.Time
 	ModifiedAt time.Time
@@ -44,14 +45,15 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 	if err := db.QueryRowContext(
 		ctx,
 		`INSERT INTO users (google_id, name)
-    VALUES($1, $3)
+    VALUES($1, $3, $4)
     ON CONFLICT (google_id) DO UPDATE
-    SET (name, modified_at) = ($3, $2)
+    SET (name, email, modified_at) = ($3, $4, $2)
     WHERE users.google_id = $1
     RETURNING id`,
 		ti.UserId,
 		time.Now(),
-		ui.Name).Scan(&id); err != nil {
+		ui.Name,
+		ui.Email).Scan(&id); err != nil {
 		return nil, fmt.Errorf("writing db entry: %w", err)
 	}
 	u, err := loadUser(ctx, db, id)
@@ -113,4 +115,17 @@ func (u *User) GetArchive(ctx context.Context, db *sql.DB) ([]*Tab, error) {
 	}
 
 	return tabs, nil
+}
+
+func UserCount(ctx context.Context, db *sql.DB) (int64, error) {
+	var i int64
+	err := db.QueryRowContext(ctx, `SELECT COUNT(*) from users`).Scan(&i)
+	switch {
+	case err == sql.ErrNoRows:
+		return 0, fmt.Errorf("no rows found")
+	case err != nil:
+		return 0, fmt.Errorf("count query failed: %w", err)
+	}
+
+	return i, nil
 }
