@@ -38,8 +38,20 @@
     <article class="pa3 pa5-ns">
       <h2 class="" id="privacy">Privacy Policy</h1>
       <p class="measure lh-copy">
-      We use your Google account ID to store your tab URLs and titles. We will never share this data with anyone.
+      We store your name, email address and unique account ID. We use your account ID to store your tab URLs, and their related metadata. We will never share this data with anyone, nor sell it.
       </p>
     </article>
+
+    <article class="pa3 pa5-ns" data-name="slab-stat">
+  <h2>Statistics</h1>
+  <dl class="dib mr5">
+    <dd class="f6 f5-ns b ml0">Tabs Stored</dd>
+    <dd class="f3 f2-ns b ml0">{{ .TabCount }}</dd>
+  </dl>
+  <dl class="dib mr5">
+    <dd class="f6 f5-ns b ml0">Users</dd>
+    <dd class="f3 f2-ns b ml0">{{ .UserCount }}</dd>
+  </dl>
+</article>
   </body>
 </html>
