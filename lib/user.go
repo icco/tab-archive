@@ -44,7 +44,7 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 	var id int64
 	if err := db.QueryRowContext(
 		ctx,
-		`INSERT INTO users (google_id, name)
+		`INSERT INTO users (google_id, name, email)
     VALUES($1, $3, $4)
     ON CONFLICT (google_id) DO UPDATE
     SET (name, email, modified_at) = ($3, $4, $2)
