@@ -116,3 +116,16 @@ func (u *User) GetArchive(ctx context.Context, db *sql.DB) ([]*Tab, error) {
 
 	return tabs, nil
 }
+
+func UserCount(ctx context.Context, db *sql.DB) (int64, error) {
+	var i int64
+	err := db.QueryRowContext(ctx, `SELECT COUNT(*) from users`).Scan(&i)
+	switch {
+	case err == sql.ErrNoRows:
+		return 0, fmt.Errorf("no rows found")
+	case err != nil:
+		return 0, fmt.Errorf("count query failed: %w", err)
+	}
+
+	return i, nil
+}

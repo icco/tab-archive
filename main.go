@@ -28,6 +28,11 @@ var (
 	log = lib.InitLogging()
 )
 
+type pageData struct {
+	TabCount  int64
+	UserCount int64
+}
+
 func main() {
 	port := "8080"
 	if fromEnv := os.Getenv("PORT"); fromEnv != "" {
@@ -81,8 +86,24 @@ func main() {
 	r.Use(crs.Handler)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		tc, err := lib.TabCount(ctx, db)
+		if err != nil {
+			log.Fatalf("tab count: %+v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		uc, err := lib.UserCount(ctx, db)
+		if err != nil {
+			log.Fatalf("user count: %+v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		tmpl := template.Must(template.ParseFiles("index.tmpl"))
-		if err := tmpl.Execute(w, nil); err != nil {
+		if err := tmpl.Execute(w, &pageData{TabCount: tc, UserCount: uc}); err != nil {
 			log.Fatalf("template execution: %s", err)
 		}
 	})
