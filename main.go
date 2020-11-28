@@ -90,15 +90,15 @@ func main() {
 
 		tc, err := lib.TabCount(ctx, db)
 		if err != nil {
-			log.Fatalf("tab count: %+v", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Errorf("tab count: %+v", err)
+			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 
 		uc, err := lib.UserCount(ctx, db)
 		if err != nil {
-			log.Fatalf("user count: %+v", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Errorf("user count: %+v", err)
+			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 
@@ -117,33 +117,35 @@ func main() {
 		tok := r.Header.Get("Authorization")
 		if tok == "" {
 			err := fmt.Errorf("no Authorization header")
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			jsError(w, err, http.StatusUnauthorized)
 			return
 		}
 		tok = strings.TrimPrefix(tok, "Bearer ")
 		u, err := lib.GetUser(ctx, db, tok)
 		if err != nil {
 			log.WithError(err).Error("could not get user")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 
 		buf, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			log.WithError(err).Error("could not read buffer")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 
 		ct := r.Header.Get("content-type")
 		if ct != "application/json" {
-			http.Error(w, "expected 'application/json' content type", http.StatusBadRequest)
+			err := fmt.Errorf("expected 'application/json' content type, got %q", ct)
+			log.WithError(err).Error("bad content type")
+			jsError(w, err, http.StatusBadRequest)
 			return
 		}
 
 		if err := lib.ParseAndStore(ctx, db, u, buf); err != nil {
 			log.WithError(err).Error("could not parse request")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 
@@ -157,21 +159,22 @@ func main() {
 		tok := r.Header.Get("Authorization")
 		if tok == "" {
 			err := fmt.Errorf("no Authorization header")
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			log.WithError(err).Error("could not get user")
+			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 		tok = strings.TrimPrefix(tok, "Bearer ")
 		u, err := lib.GetUser(ctx, db, tok)
 		if err != nil {
 			log.WithError(err).Error("could not get user")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 
 		tabs, err := u.GetArchive(ctx, db)
 		if err != nil {
 			log.WithError(err).Error("could not get user tabs")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 
@@ -180,7 +183,7 @@ func main() {
 			"tabs":   tabs,
 		}); err != nil {
 			log.WithError(err).Error("could not marshal data")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 	})
@@ -197,4 +200,11 @@ func main() {
 	}
 
 	log.Fatal(http.ListenAndServe(":"+port, h))
+}
+
+func jsError(w http.ResponseWriter, err error, statusCode int) {
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	enc := json.NewEncoder(w)
+	enc.Encode(map[string]string{"error": err.Error()})
 }
