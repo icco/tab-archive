@@ -10,22 +10,19 @@ import (
 	"os"
 	"strings"
 
-	"contrib.go.opencensus.io/exporter/stackdriver"
-	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
-	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/icco/gutil/logging"
 	"github.com/icco/tab-archive/lib"
-	"go.opencensus.io/plugin/ochttp"
-	"go.opencensus.io/stats/view"
-	"go.opencensus.io/trace"
+	"go.uber.org/zap"
 
 	_ "github.com/lib/pq"
 )
 
 var (
-	log = lib.InitLogging()
+	log        = logging.Must(logging.NewLogger("tab-archive"))
+	GCPProject = "icco-cloud"
 )
 
 type pageData struct {
@@ -38,41 +35,17 @@ func main() {
 	if fromEnv := os.Getenv("PORT"); fromEnv != "" {
 		port = fromEnv
 	}
-	log.Infof("Starting up on http://localhost:%s", port)
-
-	if os.Getenv("ENABLE_STACKDRIVER") != "" {
-		labels := &stackdriver.Labels{}
-		labels.Set("app", "tab-archive", "The name of the current app.")
-		sd, err := stackdriver.NewExporter(stackdriver.Options{
-			ProjectID:               "icco-cloud",
-			MonitoredResource:       monitoredresource.Autodetect(),
-			DefaultMonitoringLabels: labels,
-			DefaultTraceAttributes:  map[string]interface{}{"app": "tab-archive"},
-		})
-
-		if err != nil {
-			log.WithError(err).Fatalf("failed to create the stackdriver exporter")
-		}
-		defer sd.Flush()
-
-		view.RegisterExporter(sd)
-		trace.RegisterExporter(sd)
-		trace.ApplyConfig(trace.Config{
-			DefaultSampler: trace.AlwaysSample(),
-		})
-	}
+	log.Infow("Starting up", "host", fmt.Sprintf("http://localhost:%s", port))
 
 	db, err := lib.InitDB(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
-		log.Fatalf("cannot connect to database server: %+v", err)
+		log.Fatalw("cannot connect to database", zap.Error(err))
 	}
 	defer db.Close()
 
 	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Recoverer)
-	r.Use(lib.LoggingMiddleware())
+	r.Use(logging.Middleware(log.Desugar(), GCPProject))
 
 	crs := cors.New(cors.Options{
 		AllowCredentials:   true,
@@ -90,21 +63,21 @@ func main() {
 
 		tc, err := lib.TabCount(ctx, db)
 		if err != nil {
-			log.Errorf("tab count: %+v", err)
+			log.Errorw("tab count", zap.Error(err))
 			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 
 		uc, err := lib.UserCount(ctx, db)
 		if err != nil {
-			log.Errorf("user count: %+v", err)
+			log.Errorw("user count", zap.Error(err))
 			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 
 		tmpl := template.Must(template.ParseFiles("index.tmpl"))
 		if err := tmpl.Execute(w, &pageData{TabCount: tc, UserCount: uc}); err != nil {
-			log.Fatalf("template execution: %s", err)
+			log.Errorw("template execution", zap.Error(err))
 		}
 	})
 
@@ -123,14 +96,14 @@ func main() {
 		tok = strings.TrimPrefix(tok, "Bearer ")
 		u, err := lib.GetUser(ctx, db, tok)
 		if err != nil {
-			log.WithError(err).Error("could not get user")
+			log.Errorw("could not get user", zap.Error(err))
 			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 
 		buf, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			log.WithError(err).Error("could not read buffer")
+			log.Errorw("could not read buffer", zap.Error(err))
 			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
@@ -138,13 +111,13 @@ func main() {
 		ct := r.Header.Get("content-type")
 		if ct != "application/json" {
 			err := fmt.Errorf("expected 'application/json' content type, got %q", ct)
-			log.WithError(err).Error("bad content type")
+			log.Errorw("bad content type", zap.Error(err))
 			jsError(w, err, http.StatusBadRequest)
 			return
 		}
 
 		if err := lib.ParseAndStore(ctx, db, u, buf); err != nil {
-			log.WithError(err).Error("could not parse request")
+			log.Errorw("could not parse request", zap.Error(err))
 			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
@@ -159,21 +132,21 @@ func main() {
 		tok := r.Header.Get("Authorization")
 		if tok == "" {
 			err := fmt.Errorf("no Authorization header")
-			log.WithError(err).Error("could not get user")
+			log.Errorw("could not get user", zap.Error(err))
 			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 		tok = strings.TrimPrefix(tok, "Bearer ")
 		u, err := lib.GetUser(ctx, db, tok)
 		if err != nil {
-			log.WithError(err).Error("could not get user")
+			log.Errorw("could not get user", zap.Error(err))
 			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 
 		tabs, err := u.GetArchive(ctx, db)
 		if err != nil {
-			log.WithError(err).Error("could not get user tabs")
+			log.Errorw("could not get user tabs", zap.Error(err))
 			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
@@ -182,24 +155,13 @@ func main() {
 			"status": "success",
 			"tabs":   tabs,
 		}); err != nil {
-			log.WithError(err).Error("could not marshal data")
+			log.Errorw("could not marshal data", zap.Error(err))
 			jsError(w, err, http.StatusInternalServerError)
 			return
 		}
 	})
 
-	h := &ochttp.Handler{
-		Handler:     r,
-		Propagation: &propagation.HTTPFormat{},
-	}
-	if err := view.Register([]*view.View{
-		ochttp.ServerRequestCountView,
-		ochttp.ServerResponseCountByStatusCode,
-	}...); err != nil {
-		log.WithError(err).Fatal("Failed to register ochttp views")
-	}
-
-	log.Fatal(http.ListenAndServe(":"+port, h))
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }
 
 func jsError(w http.ResponseWriter, err error, statusCode int) {
