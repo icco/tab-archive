@@ -5,12 +5,14 @@ go 1.15
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
 	github.com/GuiaBolso/darwin v0.0.0-20191218124601-fd6d2aa3d244
+	github.com/auth0/go-jwt-middleware v1.0.0
 	github.com/cznic/ql v1.2.0 // indirect
 	github.com/felixge/httpsnoop v1.0.1
+	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/go-chi/chi/v5 v5.0.2
 	github.com/go-chi/cors v1.2.0
 	github.com/hellofresh/logging-go v0.4.0
-	github.com/icco/gutil v0.0.0-20210413234538-3617c9b534ad
+	github.com/icco/gutil v0.0.0-20210424022412-a2a8a04ef1f6
 	github.com/icco/logrus-stackdriver-formatter v0.3.0
 	github.com/lib/pq v1.10.1
 	github.com/opencensus-integrations/ocsql v0.1.7
