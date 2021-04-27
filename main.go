@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	log        = logging.Must(logging.NewLogger("tab-archive"))
+	log        = logging.Must(logging.NewLogger("tabs"))
 	gcpproject = "icco-cloud"
 )
 
