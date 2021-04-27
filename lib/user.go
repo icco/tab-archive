@@ -11,6 +11,7 @@ import (
 	oAPI "google.golang.org/api/oauth2/v2"
 )
 
+// User is a single user.
 type User struct {
 	ID         int64
 	Name       string
@@ -109,6 +110,7 @@ func loadUser(ctx context.Context, db *sql.DB, id int64) (*User, error) {
 	return u, nil
 }
 
+// GetArchive gets the most recent 1000 tabs.
 func (u *User) GetArchive(ctx context.Context, db *sql.DB) ([]*Tab, error) {
 	limit := 1000
 	offset := 0
@@ -140,6 +142,7 @@ func (u *User) GetArchive(ctx context.Context, db *sql.DB) ([]*Tab, error) {
 	return tabs, nil
 }
 
+// UserCount returns a count of users.
 func UserCount(ctx context.Context, db *sql.DB) (int64, error) {
 	var i int64
 	err := db.QueryRowContext(ctx, `SELECT COUNT(*) from users`).Scan(&i)

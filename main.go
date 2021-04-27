@@ -21,7 +21,7 @@ import (
 
 var (
 	log        = logging.Must(logging.NewLogger("tab-archive"))
-	GCPProject = "icco-cloud"
+	gcpproject = "icco-cloud"
 )
 
 type pageData struct {
@@ -44,7 +44,7 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP)
-	r.Use(logging.Middleware(log.Desugar(), GCPProject))
+	r.Use(logging.Middleware(log.Desugar(), gcpproject))
 
 	crs := cors.New(cors.Options{
 		AllowCredentials:   true,
