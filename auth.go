@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -65,54 +66,56 @@ func jsonError(msg string) error {
 
 // AuthMiddleware parses the incomming authentication header and turns it into
 // an attached user.
-func AuthMiddleware(next http.Handler) http.Handler {
-	jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
-		CredentialsOptional: true,
-		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-			// Verify 'aud' claim
-			aud := "https://natwelch.com"
-			checkAud := token.Claims.(jwt.MapClaims).VerifyAudience(aud, false)
-			if !checkAud {
-				log.Errorw("invalid audence", "aud", token.Raw)
-				return token, jsonError("Invalid audience.")
-			}
-			// Verify 'iss' claim
-			iss := "https://icco.auth0.com/"
-			checkIss := token.Claims.(jwt.MapClaims).VerifyIssuer(iss, false)
-			if !checkIss {
-				log.Errorw("invalid issuer", "iss", token.Raw)
-				return token, jsonError("Invalid issuer.")
-			}
+func AuthMiddleware(db *sql.DB) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
+			CredentialsOptional: true,
+			ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+				// Verify 'aud' claim
+				aud := "https://natwelch.com"
+				checkAud := token.Claims.(jwt.MapClaims).VerifyAudience(aud, false)
+				if !checkAud {
+					log.Errorw("invalid audence", "aud", token.Raw)
+					return token, jsonError("Invalid audience.")
+				}
+				// Verify 'iss' claim
+				iss := "https://icco.auth0.com/"
+				checkIss := token.Claims.(jwt.MapClaims).VerifyIssuer(iss, false)
+				if !checkIss {
+					log.Errorw("invalid issuer", "iss", token.Raw)
+					return token, jsonError("Invalid issuer.")
+				}
 
-			cert, err := getPemCert(token)
-			if err != nil {
-				msg := "cloudn't parse pem cert"
-				log.Errorw(msg, zap.Error(err))
-				return token, jsonError(msg)
-			}
+				cert, err := getPemCert(token)
+				if err != nil {
+					msg := "cloudn't parse pem cert"
+					log.Errorw(msg, zap.Error(err))
+					return token, jsonError(msg)
+				}
 
-			data, err := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
-			if err != nil {
-				log.Errorw("error parsing cert", zap.Error(err), "cert", cert)
-				return token, jsonError(err.Error())
-			}
-			return data, nil
-		},
-		SigningMethod: jwt.SigningMethodRS256,
-		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err string) {
-			log.Errorw("error with auth", zap.Error(fmt.Errorf(err)))
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			w.Header().Set("X-Content-Type-Options", "nosniff")
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintf(w, `{"error": "%s"}`, err)
-			return
-		},
-	})
+				data, err := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
+				if err != nil {
+					log.Errorw("error parsing cert", zap.Error(err), "cert", cert)
+					return token, jsonError(err.Error())
+				}
+				return data, nil
+			},
+			SigningMethod: jwt.SigningMethodRS256,
+			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err string) {
+				log.Errorw("error with auth", zap.Error(fmt.Errorf(err)))
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				w.Header().Set("X-Content-Type-Options", "nosniff")
+				w.WriteHeader(http.StatusBadRequest)
+				fmt.Fprintf(w, `{"error": "%s"}`, err)
+				return
+			},
+		})
 
-	return jwtMiddleware.Handler(getUserFromToken(next))
+		return jwtMiddleware.Handler(getUserFromToken(db, next))
+	}
 }
 
-func getUserFromToken(next http.Handler) http.Handler {
+func getUserFromToken(db *sql.DB, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenString, err := jwtmiddleware.FromAuthHeader(r)
 		if err != nil {
@@ -140,7 +143,7 @@ func getUserFromToken(next http.Handler) http.Handler {
 		log.Debugw("the token", "token", token, "claims", claims)
 
 		if claims.Subject != "" {
-			user, err := lib.GetUser(r.Context(), claims.Subject)
+			user, err := lib.GetUser(r.Context(), db, claims.Subject)
 			if err != nil {
 				log.Errorw("could not get user", "claims", claims, zap.Error(err))
 			} else {

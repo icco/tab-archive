@@ -84,7 +84,7 @@ func main() {
 		w.Write([]byte("hi."))
 	})
 
-	r.With(AuthMiddleware).Post("/hook", func(w http.ResponseWriter, r *http.Request) {
+	r.With(AuthMiddleware(db)).Post("/hook", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		u := lib.UserFromContext(ctx)
 
@@ -112,7 +112,7 @@ func main() {
 		w.Write([]byte(`{"status": "success"}`))
 	})
 
-	r.With(AuthMiddleware).Get("/archive", func(w http.ResponseWriter, r *http.Request) {
+	r.With(AuthMiddleware(db)).Get("/archive", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		u := lib.UserFromContext(ctx)
 		j := json.NewEncoder(w)
