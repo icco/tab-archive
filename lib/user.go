@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	oAPI "google.golang.org/api/oauth2/v2"
 )
@@ -84,11 +83,7 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.WithFields(logrus.Fields{
-		"token_info": ti,
-		"user":       u,
-		"user_info":  ui,
-	}).Debug("user found")
+	log.Debugw("user found", "token_info", ti, "user", u, "user_info", ui)
 
 	return u, nil
 }
