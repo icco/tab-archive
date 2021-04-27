@@ -14,7 +14,6 @@ require (
 	github.com/lib/pq v1.10.1
 	github.com/opencensus-integrations/ocsql v0.1.7
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/sirupsen/logrus v1.8.1
 	go.uber.org/zap v1.16.0
 	golang.org/x/net v0.0.0-20210423184538-5f58ad60dda6 // indirect
 	golang.org/x/oauth2 v0.0.0-20210413134643-5e61552d6c78
