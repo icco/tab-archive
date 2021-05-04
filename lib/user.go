@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	oAPI "google.golang.org/api/oauth2/v2"
 )
 
+// User is a single user.
 type User struct {
 	ID         int64
 	Name       string
@@ -20,6 +20,29 @@ type User struct {
 	ModifiedAt time.Time
 }
 
+type key int8
+
+const (
+	userCtxKey key = 0
+)
+
+// UserFromContext finds the user from the context. This is usually inserted
+// by WithUser.
+func UserFromContext(ctx context.Context) *User {
+	u, ok := ctx.Value(userCtxKey).(*User)
+	if !ok {
+		return nil
+	}
+
+	return u
+}
+
+// WithUser puts a user in the context.
+func WithUser(ctx context.Context, u *User) context.Context {
+	return context.WithValue(ctx, userCtxKey, u)
+}
+
+// GetUser gets a user from the database by token.
 func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 	f := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: authToken})
 	c, err := oAPI.New(oauth2.NewClient(ctx, f))
@@ -60,11 +83,7 @@ func GetUser(ctx context.Context, db *sql.DB, authToken string) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.WithFields(logrus.Fields{
-		"token_info": ti,
-		"user":       u,
-		"user_info":  ui,
-	}).Debug("user found")
+	log.Debugw("user found", "token_info", ti, "user", u, "user_info", ui)
 
 	return u, nil
 }
@@ -86,6 +105,7 @@ func loadUser(ctx context.Context, db *sql.DB, id int64) (*User, error) {
 	return u, nil
 }
 
+// GetArchive gets the most recent 1000 tabs.
 func (u *User) GetArchive(ctx context.Context, db *sql.DB) ([]*Tab, error) {
 	limit := 1000
 	offset := 0
@@ -117,6 +137,7 @@ func (u *User) GetArchive(ctx context.Context, db *sql.DB) ([]*Tab, error) {
 	return tabs, nil
 }
 
+// UserCount returns a count of users.
 func UserCount(ctx context.Context, db *sql.DB) (int64, error) {
 	var i int64
 	err := db.QueryRowContext(ctx, `SELECT COUNT(*) from users`).Scan(&i)

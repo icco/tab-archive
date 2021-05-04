@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -21,8 +20,8 @@ import (
 )
 
 var (
-	log        = logging.Must(logging.NewLogger("tab-archive"))
-	GCPProject = "icco-cloud"
+	log        = logging.Must(logging.NewLogger("tabs"))
+	gcpproject = "icco-cloud"
 )
 
 type pageData struct {
@@ -45,7 +44,7 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP)
-	r.Use(logging.Middleware(log.Desugar(), GCPProject))
+	r.Use(logging.Middleware(log.Desugar(), gcpproject))
 
 	crs := cors.New(cors.Options{
 		AllowCredentials:   true,
@@ -85,21 +84,9 @@ func main() {
 		w.Write([]byte("hi."))
 	})
 
-	r.Post("/hook", func(w http.ResponseWriter, r *http.Request) {
+	r.With(AuthMiddleware(db)).Post("/hook", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		tok := r.Header.Get("Authorization")
-		if tok == "" {
-			err := fmt.Errorf("no Authorization header")
-			jsError(w, err, http.StatusUnauthorized)
-			return
-		}
-		tok = strings.TrimPrefix(tok, "Bearer ")
-		u, err := lib.GetUser(ctx, db, tok)
-		if err != nil {
-			log.Errorw("could not get user", zap.Error(err))
-			jsError(w, err, http.StatusInternalServerError)
-			return
-		}
+		u := lib.UserFromContext(ctx)
 
 		buf, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -125,24 +112,10 @@ func main() {
 		w.Write([]byte(`{"status": "success"}`))
 	})
 
-	r.Get("/archive", func(w http.ResponseWriter, r *http.Request) {
+	r.With(AuthMiddleware(db)).Get("/archive", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		u := lib.UserFromContext(ctx)
 		j := json.NewEncoder(w)
-
-		tok := r.Header.Get("Authorization")
-		if tok == "" {
-			err := fmt.Errorf("no Authorization header")
-			log.Errorw("could not get user", zap.Error(err))
-			jsError(w, err, http.StatusInternalServerError)
-			return
-		}
-		tok = strings.TrimPrefix(tok, "Bearer ")
-		u, err := lib.GetUser(ctx, db, tok)
-		if err != nil {
-			log.Errorw("could not get user", zap.Error(err))
-			jsError(w, err, http.StatusInternalServerError)
-			return
-		}
 
 		tabs, err := u.GetArchive(ctx, db)
 		if err != nil {

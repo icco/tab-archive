@@ -6,10 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
+// Tab is a single tab to archive.
 type Tab struct {
 	URL     string    `json:"url"`
 	Title   string    `json:"title"`
@@ -17,17 +16,15 @@ type Tab struct {
 	Seen    time.Time `json:"seen"`
 }
 
+// ParseAndStore parses a tabe and stores to the db.
 func ParseAndStore(ctx context.Context, db *sql.DB, u *User, buf []byte) error {
-	log.WithField("body", string(buf)).Debug("attempting to parse")
+	log.Debugw("attempting to parse", "body", string(buf))
 	var t *Tab
 	if err := json.Unmarshal(buf, &t); err != nil {
 		return fmt.Errorf("could not parse: %w", err)
 	}
 
-	log.WithFields(logrus.Fields{
-		"tab":  t,
-		"user": u,
-	}).Debug("parsed")
+	log.Debugw("parsed", "tab", t, "user", u)
 	if _, err := db.ExecContext(
 		ctx,
 		`INSERT INTO tabs (title, url, seen, favicon, user_id) VALUES ($1, $2, $3, $4, $5)`,
@@ -42,6 +39,7 @@ func ParseAndStore(ctx context.Context, db *sql.DB, u *User, buf []byte) error {
 	return nil
 }
 
+// TabCount counts the number of tabs in the db.
 func TabCount(ctx context.Context, db *sql.DB) (int64, error) {
 	var i int64
 	err := db.QueryRowContext(ctx, `SELECT COUNT(*) from tabs`).Scan(&i)
