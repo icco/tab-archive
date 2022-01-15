@@ -10,7 +10,7 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.2.0
-	github.com/icco/gutil v0.0.0-20220115163816-b7b82159b0b6
+	github.com/icco/gutil v0.0.0-20220115170613-a57da700978e
 	github.com/lib/pq v1.10.4
 	github.com/opencensus-integrations/ocsql v0.1.7
 	github.com/pkg/errors v0.9.1 // indirect
